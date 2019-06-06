@@ -23,6 +23,10 @@ def main_page():
     title = "User Details"
     return render_template('index.html', user=user, pagetitle=title)
 
+@app.route('/user')
+def user_details():
+    return render_template("user.html", title="User Details", user=current_user)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

@@ -9,5 +9,6 @@
 
 <!-- This replaces the content block in base.html -->
 {% block content %}
-    Welcome to the site!
+    <p>Welcome {{ user.username }}</p>
+    <p>Password Hash: {{ user.password_hash }}</p>
 {% endblock %}
