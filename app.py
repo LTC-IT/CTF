@@ -1,6 +1,6 @@
 from flask import Flask, url_for
-from flask import render_template, redirect
-from forms import LoginForm
+from flask import render_template, redirect, flash
+
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
@@ -11,9 +11,11 @@ app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 login = LoginManager(app)
+login.login_view = 'login'
 
 
 from models import User
+from forms import LoginForm, RegistrationForm
 
 # Routes
 
@@ -23,7 +25,9 @@ def main_page():
     title = "User Details"
     return render_template('index.html', user=user, pagetitle=title)
 
+
 @app.route('/user')
+@login_required
 def user_details():
     return render_template("user.html", title="User Details", user=current_user)
 
@@ -45,6 +49,22 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("main_page"))
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('main_page'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Congratulations, you are now a registered user!')
+        return redirect(url_for('login'))
+    return render_template('register.html', title='Register', form=form)
+
 
 if __name__ == '__main__':
     app.run()
