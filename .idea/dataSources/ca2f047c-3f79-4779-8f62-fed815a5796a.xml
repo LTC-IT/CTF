@@ -11,67 +11,111 @@
     <collation id="3" parent="1" name="BINARY"/>
     <collation id="4" parent="1" name="NOCASE"/>
     <collation id="5" parent="1" name="RTRIM"/>
-    <table id="6" parent="2" name="sqlite_master">
+    <table id="6" parent="2" name="ctf_sub_systems"/>
+    <table id="7" parent="2" name="sqlite_master">
       <System>1</System>
     </table>
-    <table id="7" parent="2" name="sqlite_sequence">
+    <table id="8" parent="2" name="sqlite_sequence">
       <System>1</System>
     </table>
-    <table id="8" parent="2" name="user"/>
-    <column id="9" parent="6" name="type">
+    <table id="9" parent="2" name="user"/>
+    <column id="10" parent="6" name="id">
+      <Position>1</Position>
+      <DataType>INTEGER|0s</DataType>
+      <NotNull>1</NotNull>
+    </column>
+    <column id="11" parent="6" name="title">
+      <Position>2</Position>
+      <DataType>VARCHAR(64)|0s</DataType>
+    </column>
+    <column id="12" parent="6" name="description">
+      <Position>3</Position>
+      <DataType>VARCHAR(256)|0s</DataType>
+    </column>
+    <column id="13" parent="6" name="Owner">
+      <Position>4</Position>
+      <DataType>VARCHAR(64)|0s</DataType>
+    </column>
+    <column id="14" parent="6" name="score">
+      <Position>5</Position>
+      <DataType>INTEGER|0s</DataType>
+    </column>
+    <index id="15" parent="6" name="ix_ctf_sub_systems_title">
+      <ColNames>title</ColNames>
+      <ColumnCollations></ColumnCollations>
+      <Unique>1</Unique>
+    </index>
+    <index id="16" parent="6" name="ix_ctf_sub_systems_description">
+      <ColNames>description</ColNames>
+      <ColumnCollations></ColumnCollations>
+      <Unique>1</Unique>
+    </index>
+    <index id="17" parent="6" name="ix_ctf_sub_systems_Owner">
+      <ColNames>Owner</ColNames>
+      <ColumnCollations></ColumnCollations>
+    </index>
+    <index id="18" parent="6" name="ix_ctf_sub_systems_score">
+      <ColNames>score</ColNames>
+      <ColumnCollations></ColumnCollations>
+    </index>
+    <key id="19" parent="6">
+      <ColNames>id</ColNames>
+      <Primary>1</Primary>
+    </key>
+    <column id="20" parent="7" name="type">
       <Position>1</Position>
       <DataType>text|0s</DataType>
     </column>
-    <column id="10" parent="6" name="name">
+    <column id="21" parent="7" name="name">
       <Position>2</Position>
       <DataType>text|0s</DataType>
     </column>
-    <column id="11" parent="6" name="tbl_name">
+    <column id="22" parent="7" name="tbl_name">
       <Position>3</Position>
       <DataType>text|0s</DataType>
     </column>
-    <column id="12" parent="6" name="rootpage">
+    <column id="23" parent="7" name="rootpage">
       <Position>4</Position>
       <DataType>int|0s</DataType>
     </column>
-    <column id="13" parent="6" name="sql">
+    <column id="24" parent="7" name="sql">
       <Position>5</Position>
       <DataType>text|0s</DataType>
     </column>
-    <column id="14" parent="7" name="name">
+    <column id="25" parent="8" name="name">
       <Position>1</Position>
     </column>
-    <column id="15" parent="7" name="seq">
+    <column id="26" parent="8" name="seq">
       <Position>2</Position>
     </column>
-    <column id="16" parent="8" name="id">
+    <column id="27" parent="9" name="id">
       <Position>1</Position>
       <DataType>INTEGER|0s</DataType>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="17" parent="8" name="username">
+    <column id="28" parent="9" name="username">
       <Position>2</Position>
       <DataType>VARCHAR(64)|0s</DataType>
     </column>
-    <column id="18" parent="8" name="email">
+    <column id="29" parent="9" name="email">
       <Position>3</Position>
       <DataType>VARCHAR(120)|0s</DataType>
     </column>
-    <column id="19" parent="8" name="password_hash">
+    <column id="30" parent="9" name="password_hash">
       <Position>4</Position>
       <DataType>VARCHAR(128)|0s</DataType>
     </column>
-    <index id="20" parent="8" name="user_username_uindex">
+    <index id="31" parent="9" name="user_username_uindex">
       <ColNames>username</ColNames>
       <ColumnCollations></ColumnCollations>
       <Unique>1</Unique>
     </index>
-    <index id="21" parent="8" name="user_email_uindex">
+    <index id="32" parent="9" name="user_email_uindex">
       <ColNames>email</ColNames>
       <ColumnCollations></ColumnCollations>
       <Unique>1</Unique>
     </index>
-    <key id="22" parent="8" name="user_pk">
+    <key id="33" parent="9" name="user_pk">
       <ColNames>id</ColNames>
       <Primary>1</Primary>
     </key>
