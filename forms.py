@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, IntegerField
 from models import User
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 
@@ -27,5 +27,9 @@ class RegistrationForm(FlaskForm):
         if user is not None:
             raise ValidationError('Please use a different email address.')
 
-
+class CTFSubsystemForm(FlaskForm):
+    title = StringField("Title", validators=[DataRequired()])
+    description = StringField("Description", validators=[DataRequired()])
+    score = IntegerField("Score", validators=[DataRequired()])
+    submit = SubmitField('Register')
 

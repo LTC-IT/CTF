@@ -14,22 +14,22 @@ login = LoginManager(app)
 login.login_view = 'login'
 
 
-from models import User
-from forms import LoginForm, RegistrationForm
+from models import User, CTFSubSystems
+from forms import LoginForm, RegistrationForm, CTFSubsystemForm
 
 # Routes
 
 @app.route('/')
 def main_page():
     user = {'username': 'Ryan', 'password': '********'}
-    title = "User Details"
+    title = "Home"
     return render_template('index.html', user=user, pagetitle=title)
 
 
 @app.route('/user')
 @login_required
 def user_details():
-    return render_template("user.html", title="User Details", user=current_user)
+    return render_template("user.html", pagetitle="User Details", user=current_user)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -43,7 +43,7 @@ def login():
             return redirect(url_for('login'))
         login_user(user, remember=form.remember_me.data)
         return redirect(url_for('main_page'))
-    return render_template('login.html', title='Sign In', form=form)
+    return render_template('login.html', pagetitle='Sign In', form=form)
 
 @app.route("/logout")
 def logout():
@@ -63,8 +63,18 @@ def register():
         db.session.commit()
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
-    return render_template('register.html', title='Register', form=form)
+    return render_template('register.html', pagetitle='Register', form=form)
 
+@app.route('/registersubsystem', methods=['GET', 'POST'])
+def registerCTFSubsystem():
+    form = CTFSubsystemForm()
+    if form.validate_on_submit():
+        newSubSystem = CTFSubSystems(title=form.title.data, description=form.description.data, score=form.score.data, Owner="None")
+        db.session.add(newSubSystem)
+        db.session.commit()
+        flash('Congratulations, you have registered a new CTF Subsystem!')
+        return redirect(url_for('login'))
+    return render_template('registersubsystem.html', pagetitle='Register Sub System', form=form)
 
 if __name__ == '__main__':
     app.run()

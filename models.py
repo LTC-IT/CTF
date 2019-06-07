@@ -18,6 +18,15 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+
+class CTFSubSystems(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String(64), index=True, unique=True)
+    description = db.Column(db.String(256), index=True, unique=True)
+    Owner = db.Column(db.String(64), index=True, unique=False)
+    score = db.Column(db.Integer, index=True, unique=False)
+
+
 @login.user_loader
 def load_user(id):
     return User.query.get(int(id))
