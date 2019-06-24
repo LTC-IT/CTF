@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Python</ID>
+  <OriginalElement>#/Users/ryan/OneDrive - ACT Education/@ Class Projects/@ Stream - General IT/4 - Dynamic Website Construction/Projects/2019/CTF/config.py</OriginalElement>
+  <nodes>
+    <node x="627.0" y="553.0">models.CTFSubSystems</node>
+    <node x="330.0" y="575.0">config.Config</node>
+    <node x="902.0" y="0.0">forms.RegistrationForm</node>
+    <node x="295.0" y="1070.0">forms.LoginForm</node>
+    <node x="0.0" y="1070.0">forms.CTFSubsystemForm</node>
+    <node x="334.0" y="0.0">object</node>
+    <node x="0.0" y="542.0">flask_login.mixins.UserMixin</node>
+    <node x="37.0" y="753.0">models.User</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="config.Config" target="object">
+      <point x="0.0" y="-47.5" />
+      <point x="0.0" y="246.0" />
+    </edge>
+    <edge source="models.CTFSubSystems" target="object">
+      <point x="0.0" y="-69.5" />
+      <point x="742.0" y="517.0" />
+      <point x="558.1666666666667" y="517.0" />
+      <point x="89.66666666666674" y="246.0" />
+    </edge>
+    <edge source="flask_login.mixins.UserMixin" target="object">
+      <point x="0.0" y="-80.5" />
+      <point x="155.0" y="517.0" />
+      <point x="378.8333333333333" y="517.0" />
+      <point x="-89.66666666666669" y="246.0" />
+    </edge>
+    <edge source="models.User" target="flask_login.mixins.UserMixin">
+      <point x="0.0" y="-136.0" />
+      <point x="0.0" y="80.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="80.0" y="603.5" />
+  <SelectedNodes>
+    <node>forms.RegistrationForm</node>
+  </SelectedNodes>
+  <Categories>
+    <Category>Methods</Category>
+    <Category>Fields</Category>
+  </Categories>
+</Diagram>
+

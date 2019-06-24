@@ -6,7 +6,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 
 
-
 app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
@@ -65,6 +64,7 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', pagetitle='Register', form=form)
 
+
 @app.route('/registersubsystem', methods=['GET', 'POST'])
 def registerCTFSubsystem():
     form = CTFSubsystemForm()
@@ -75,6 +75,7 @@ def registerCTFSubsystem():
         flash('Congratulations, you have registered a new CTF Subsystem!')
         return redirect(url_for('login'))
     return render_template('registersubsystem.html', pagetitle='Register Sub System', form=form)
+
 
 if __name__ == '__main__':
     app.run()
