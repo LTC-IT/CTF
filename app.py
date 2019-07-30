@@ -1,6 +1,5 @@
 from flask import Flask, url_for
 from flask import render_template, redirect, flash
-
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
