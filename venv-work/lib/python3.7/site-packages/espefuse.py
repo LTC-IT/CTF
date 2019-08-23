@@ -25,16 +25,19 @@ import time
 
 import esptool
 
+import json
+
 # Table of efuse values - (category, block, word in block, mask, write disable bit, read disable bit, type, description)
 # Match values in efuse_reg.h & Efuse technical reference chapter
 EFUSES = [
     ('WR_DIS',               "efuse",    0, 0, 0x0000FFFF, 1,  None, "int", "Efuse write disable mask"),
     ('RD_DIS',               "efuse",    0, 0, 0x000F0000, 0,  None, "int", "Efuse read disablemask"),
-    ('FLASH_CRYPT_CNT',      "security", 0, 0, 0x0FF00000, 2,  None, "bitcount", "Flash encryption mode counter"),
+    ('FLASH_CRYPT_CNT',      "security", 0, 0, 0x07F00000, 2,  None, "bitcount", "Flash encryption mode counter"),
     ('MAC',                  "identity", 0, 1, 0xFFFFFFFF, 3,  None, "mac", "Factory MAC Address"),
     ('XPD_SDIO_FORCE',       "config",   0, 4, 1 << 16,    5,  None, "flag", "Ignore MTDI pin (GPIO12) for VDD_SDIO on reset"),
     ('XPD_SDIO_REG',         "config",   0, 4, 1 << 14,    5,  None, "flag", "If XPD_SDIO_FORCE, enable VDD_SDIO reg on reset"),
     ('XPD_SDIO_TIEH',        "config",   0, 4, 1 << 15,    5,  None, "flag", "If XPD_SDIO_FORCE & XPD_SDIO_REG, 1=3.3V 0=1.8V"),
+    ('CLK8M_FREQ',           "config",   0, 4, 0xFF,    None,  None, "int",  "8MHz clock freq override"),
     ('SPI_PAD_CONFIG_CLK',   "config",   0, 5, 0x1F << 0,  6,  None, "spipin", "Override SD_CLK pad (GPIO6/SPICLK)"),
     ('SPI_PAD_CONFIG_Q',     "config",   0, 5, 0x1F << 5,  6,  None, "spipin", "Override SD_DATA_0 pad (GPIO7/SPIQ)"),
     ('SPI_PAD_CONFIG_D',     "config",   0, 5, 0x1F << 10, 6,  None, "spipin", "Override SD_DATA_1 pad (GPIO8/SPID)"),
@@ -95,6 +98,22 @@ EFUSE_REG_WRITE = [0x3FF5A01C, 0x3FF5A098, 0x3FF5A0B8, 0x3FF5A0D8]
 EFUSE_REG_DEC_STATUS = 0x3FF5A11C
 EFUSE_REG_DEC_STATUS_MASK = 0xFFF
 
+# Efuse clock control
+EFUSE_DAC_CONF_REG = 0x3FF5A118
+EFUSE_CLK_REG = 0x3FF5A0F8
+
+EFUSE_DAC_CLK_DIV_MASK = 0xFF
+EFUSE_CLK_SEL0_MASK = 0x00FF
+EFUSE_CLK_SEL1_MASK = 0xFF00
+
+EFUSE_CLK_SETTINGS = {
+    # APB freq: clk_sel0, clk_sel1, dac_clk_div
+    # Taken from TRM chapter "eFuse Controller": Timing Configuration
+    26: (250, 255, 52),
+    40: (160, 255, 80),
+    80: (80, 128, 100),  # this is here for completeness only as esptool never sets an 80MHz APB clock
+}
+
 EFUSE_BURN_TIMEOUT = 0.250  # seconds
 
 
@@ -152,8 +171,17 @@ class EspEfuses(object):
         """ Write the values in the efuse write registers to
         the efuse hardware, then refresh the efuse read registers.
         """
-        self._esp.write_reg(EFUSE_REG_CONF, EFUSE_CONF_WRITE)
-        self._esp.write_reg(EFUSE_REG_CMD, EFUSE_CMD_WRITE)
+
+        # Configure clock
+        apb_freq = self._esp.get_crystal_freq()
+        clk_sel0, clk_sel1, dac_clk_div = EFUSE_CLK_SETTINGS[apb_freq]
+
+        self.update_reg(EFUSE_DAC_CONF_REG, EFUSE_DAC_CLK_DIV_MASK, dac_clk_div)
+        self.update_reg(EFUSE_CLK_REG, EFUSE_CLK_SEL0_MASK, clk_sel0)
+        self.update_reg(EFUSE_CLK_REG, EFUSE_CLK_SEL1_MASK, clk_sel1)
+
+        self.write_reg(EFUSE_REG_CONF, EFUSE_CONF_WRITE)
+        self.write_reg(EFUSE_REG_CMD, EFUSE_CMD_WRITE)
 
         def wait_idle():
             deadline = time.time() + EFUSE_BURN_TIMEOUT
@@ -162,8 +190,8 @@ class EspEfuses(object):
                     return
             raise esptool.FatalError("Timed out waiting for Efuse controller command to complete")
         wait_idle()
-        self._esp.write_reg(EFUSE_REG_CONF, EFUSE_CONF_READ)
-        self._esp.write_reg(EFUSE_REG_CMD, EFUSE_CMD_READ)
+        self.write_reg(EFUSE_REG_CONF, EFUSE_CONF_READ)
+        self.write_reg(EFUSE_REG_CMD, EFUSE_CMD_READ)
         wait_idle()
 
     def read_efuse(self, addr):
@@ -174,6 +202,9 @@ class EspEfuses(object):
 
     def write_reg(self, addr, value):
         return self._esp.write_reg(addr, value)
+
+    def update_reg(self, addr, mask, new_val):
+        return self._esp.update_reg(addr, mask, new_val)
 
     def get_coding_scheme_warnings(self):
         """ Check if the coding scheme has detected any errors.
@@ -206,11 +237,7 @@ class EfuseField(object):
         self.word = word
         self.data_reg_offs = EFUSE_BLOCK_OFFS[self.block] + self.word
         self.mask = mask
-        self.shift = 0
-        # self.shift is the number of the least significant bit in the mask
-        while mask & 0x1 == 0:
-            self.shift += 1
-            mask >>= 1
+        self.shift = esptool._mask_to_shift(mask)
         self.write_disable_bit = write_disable_bit
         self.read_disable_bit = read_disable_bit
         self.register_name = register_name
@@ -377,8 +404,8 @@ class EfuseKeyblockField(EfuseField):
         return struct.unpack("<" + "I" * (len(outbits) // 4), outbits)
 
     def burn_key(self, new_value):
-            new_value = new_value[::-1]  # AES keys are stored in reverse order in efuse
-            return self.burn(new_value)
+        new_value = new_value[::-1]  # AES keys are stored in reverse order in efuse
+        return self.burn(new_value)
 
     def burn(self, new_value):
         key_len = self.parent.get_block_len()
@@ -471,10 +498,16 @@ def dump(esp, _efuses, args):
 def summary(esp, efuses, args):
     """ Print a human-readable summary of efuse contents """
     ROW_FORMAT = "%-22s %-50s%s= %s %s %s"
-    print(ROW_FORMAT.replace("-50", "-12") % ("EFUSE_NAME", "Description", "", "[Meaningful Value]", "[Readable/Writeable]", "(Hex Value)"))
-    print("-" * 88)
+    human_output = (args.format == 'summary')
+    json_efuse = {}
+    if args.file != sys.stdout:
+        print("Saving efuse values to " + args.file.name)
+    if human_output:
+        print(ROW_FORMAT.replace("-50", "-12") % ("EFUSE_NAME", "Description", "", "[Meaningful Value]", "[Readable/Writeable]", "(Hex Value)"),file=args.file)
+        print("-" * 88,file=args.file)
     for category in set(e.category for e in efuses):
-        print("%s fuses:" % category.title())
+        if human_output:
+            print("%s fuses:" % category.title(),file=args.file)
         for e in (e for e in efuses if e.category == category):
             raw = e.get_raw()
             try:
@@ -490,25 +523,40 @@ def summary(esp, efuses, args):
                 perms = "-/W"
             else:
                 perms = "-/-"
-            value = str(e.get())
+            base_value = e.get()
+            value = str(base_value)
             if not readable:
                 value = value.replace("0", "?")
-            print(ROW_FORMAT % (e.register_name, e.description, "\n  " if len(value) > 20 else "", value, perms, raw))
+            if human_output:
+                print(ROW_FORMAT % (e.register_name, e.description, "\n  " if len(value) > 20 else "", value, perms, raw),file=args.file)
+            if args.format == 'json':
+                json_efuse[e.register_name] = {
+                    'value': base_value if readable else value,
+                    'readable':readable,
+                    'writeable':writeable}
+        if human_output:
+            print("",file=args.file)
+    if human_output:
+        sdio_force = efuses["XPD_SDIO_FORCE"]
+        sdio_tieh = efuses["XPD_SDIO_TIEH"]
+        sdio_reg = efuses["XPD_SDIO_REG"]
+        if sdio_force.get() == 0:
+            print("Flash voltage (VDD_SDIO) determined by GPIO12 on reset (High for 1.8V, Low/NC for 3.3V).",file=args.file)
+        elif sdio_reg.get() == 0:
+            print("Flash voltage (VDD_SDIO) internal regulator disabled by efuse.",file=args.file)
+        elif sdio_tieh.get() == 0:
+            print("Flash voltage (VDD_SDIO) set to 1.8V by efuse.",file=args.file)
+        else:
+            print("Flash voltage (VDD_SDIO) set to 3.3V by efuse.",file=args.file)
+        warnings = efuses.get_coding_scheme_warnings()
+        if warnings:
+            print("WARNING: Coding scheme has encoding bit error warnings (0x%x)" % warnings,file=args.file)
+        if args.file != sys.stdout:
+            args.file.close()
+            print("Done")
+    if args.format == 'json':
+        json.dump(json_efuse,args.file,sort_keys=True,indent=4)
         print("")
-    sdio_force = efuses["XPD_SDIO_FORCE"]
-    sdio_tieh = efuses["XPD_SDIO_TIEH"]
-    sdio_reg = efuses["XPD_SDIO_REG"]
-    if sdio_force.get() == 0:
-        print("Flash voltage (VDD_SDIO) determined by GPIO12 on reset (High for 1.8V, Low/NC for 3.3V).")
-    elif sdio_reg.get() == 0:
-        print("Flash voltage (VDD_SDIO) internal regulator disabled by efuse.")
-    elif sdio_tieh.get() == 0:
-        print("Flash voltage (VDD_SDIO) set to 1.8V by efuse.")
-    else:
-        print("Flash voltage (VDD_SDIO) set to 3.3V by efuse.")
-    warnings = efuses.get_coding_scheme_warnings()
-    if warnings:
-        print("WARNING: Coding scheme has encoding bit error warnings (0x%x)" % warnings)
 
 
 def burn_efuse(esp, efuses, args):
@@ -811,8 +859,10 @@ def main():
         help='Run espefuse.py {command} -h for additional help')
 
     subparsers.add_parser('dump', help='Dump raw hex values of all efuses')
-    subparsers.add_parser('summary',
-                          help='Print human-readable summary of efuse values')
+    p = subparsers.add_parser('summary',
+                              help='Print human-readable summary of efuse values')
+    p.add_argument('--format', help='Select the summary format',choices=['summary','json'],default='summary')
+    p.add_argument('--file', help='File to save the efuse summary',type=argparse.FileType('w'),default=sys.stdout)
 
     p = subparsers.add_parser('burn_efuse',
                               help='Burn the efuse with the specified name')
