@@ -41,7 +41,15 @@
         </ul>
     </div>
 </nav>
-
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+        <li><span style="color: red;">{{ message }}</span></li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
 
 <!-- Dynamic content -->
 <section class="content">

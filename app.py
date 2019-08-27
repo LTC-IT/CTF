@@ -1,8 +1,9 @@
-from flask import Flask, url_for
+from flask import Flask, url_for, Markup
 from flask import render_template, redirect, flash
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
+from sqlalchemy import text
 
 
 app = Flask(__name__)
@@ -59,7 +60,7 @@ def register():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash('Congratulations, you are now a registered user!')
+        flash("Congratulations, you are now a registered user!")
         return redirect(url_for('login'))
     return render_template('register.html', pagetitle='Register', form=form)
 
@@ -74,6 +75,19 @@ def registerCTFSubsystem():
         flash('Congratulations, you have registered a new CTF Subsystem!')
         return redirect(url_for('login'))
     return render_template('registersubsystem.html', pagetitle='Register Sub System', form=form)
+
+
+@app.route("/report/showallsubsystems")
+def showallsubsystems():
+    subsystems = text('select title, description from ctf_sub_systems')
+    result = db.engine.execute(subsystems)
+    html_output = Markup("<table class='table'><thead><tr><th>Subsystem name</th><th>Description</th></tr></thead><tbody>")
+    for record in result:
+        subsystem_name = record[0]
+        subsystem_description = record[1]
+        html_output = Markup("{}<tr><td>{}:</td><td>{}</td></tr>".format(html_output, subsystem_name, subsystem_description))
+    html_output = Markup("{}</tbody></table>".format(html_output))
+    return render_template('report.html', pagetitle='Subsystem Details', data=html_output)
 
 
 if __name__ == '__main__':
