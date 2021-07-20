@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %} {{ title }}{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <style>
+        figure {
+            margin: 16px 40px !important;
+        }
+
+        .img-fluid {
+            max-width: 10%;
+            height: auto;
+        }
+
+        .bs-example div[class^="col"] {
+            text-align: center;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+
+    </style>
+
+
+    <form action="/claim" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        {{ form.csrf_token }}
+        <table>
+            <tr>
+                <td>Claim?</td>
+                <td>Sub System</td>
+            </tr>
+            {% for i in subsystems %}
+
+                <tr>
+                    <td><input type=checkbox id="{{ i.ID }}"
+                               name=subsystems value="{{ i.id }}"></td>
+                    <td><label for="id_{{ i.title }}">{{ i.title }}</label></td>
+                </tr>
+
+            {% endfor %}
+        </table>
+        <p>{{ form.submit() }}</p>
+    </form>
+
+{% endblock %}

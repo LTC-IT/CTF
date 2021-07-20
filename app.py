@@ -1,5 +1,5 @@
 from flask import Flask, url_for, Markup
-from flask import render_template, redirect, flash
+from flask import render_template, redirect, flash, request
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
@@ -14,7 +14,7 @@ login.login_view = 'login'
 
 
 from models import User, CTFSubSystems
-from forms import LoginForm, RegistrationForm, CTFSubsystemForm
+from forms import LoginForm, RegistrationForm, CTFSubsystemForm, ClaimSubSystem
 
 # Routes
 
@@ -88,6 +88,24 @@ def showallsubsystems():
         html_output = Markup("{}<tr><td>{}:</td><td>{}</td></tr>".format(html_output, subsystem_name, subsystem_description))
     html_output = Markup("{}</tbody></table>".format(html_output))
     return render_template('report.html', pagetitle='Subsystem Details', data=html_output)
+
+
+@app.route("/claim", methods=['GET', 'POST'])
+def claimsubsystem():
+    form = ClaimSubSystem()
+    if form.validate_on_submit():
+        print("submit")
+        claimed_systems = request.form.getlist("subsystems")
+        print(claimed_systems)
+        for subsystem in claimed_systems:
+            claiming = CTFSubSystems.query.filter_by(id=subsystem).first()
+            claiming.Owner = current_user.username
+            db.session.commit()
+
+    print(form.errors)
+    subsystems = text("select * from ctf_sub_systems")
+    result = db.engine.execute(subsystems)
+    return render_template('claim.html', title='Claim Subsystems', form=form, user=current_user, subsystems=result)
 
 
 if __name__ == '__main__':

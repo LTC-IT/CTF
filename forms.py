@@ -34,3 +34,7 @@ class CTFSubsystemForm(FlaskForm):
     score = IntegerField("Score", validators=[DataRequired()])
     submit = SubmitField('Register')
 
+
+class ClaimSubSystem(FlaskForm):
+    id = IntegerField("ID")
+    submit = SubmitField('Claim')
